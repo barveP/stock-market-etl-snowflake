@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+.DS_Store
+airflow.db
+airflow.cfg
+webserver_config.py
+logs/
