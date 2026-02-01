@@ -46,19 +46,6 @@ docker-compose up -d
 
 Access Airflow UI at `http://localhost:8080` (admin/admin)
 
-## Project Structure
-
-```
-├── dags/                 # Airflow DAGs
-├── src/
-│   ├── ingestion/        # Data extraction
-│   ├── transformation/   # Data transformation & validation
-│   └── loading/          # S3 and Snowflake loaders
-├── config/               # Configuration
-├── sql/                  # Snowflake DDL scripts
-└── docker/               # Docker setup
-```
-
 ## Tech Stack
 
 Python, Apache Airflow, AWS S3, Snowflake, Snowpipe, Docker, yfinance
