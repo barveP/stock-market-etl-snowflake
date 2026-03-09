@@ -60,37 +60,6 @@ fact_daily_prices (price_id, company_id, date, open, high, low, close, volume, .
 - **Containerization**: Docker & Docker Compose
 - **Language**: Python 3.10
 
-## Project Structure
-
-```
-stock-market-etl-snowflake/
-├── config/
-│   └── config.py              # AWS, Snowflake, ETL configuration
-├── dags/
-│   └── stock_etl_dag.py       # Airflow DAG definition
-├── docker/
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── sql/
-│   ├── snowflake_setup.sql    # Database, tables, stage DDL
-│   └── snowpipe_setup.sql     # Snowpipe definitions
-├── src/
-│   ├── ingestion/
-│   │   ├── sp500_tickers.py   # S&P 500 ticker scraper
-│   │   └── yahoo_finance.py   # Yahoo Finance price extractor
-│   ├── transformation/
-│   │   ├── transformers.py    # Dim/fact table builder
-│   │   └── validators.py      # 12 data quality checks
-│   └── loading/
-│       ├── s3_loader.py       # S3 Parquet uploader
-│       └── snowflake_loader.py # Snowpipe trigger
-├── results/                   # Pipeline result screenshots
-├── .env.example               # Environment variable template
-├── requirements.txt
-├── SETUP.md                   # Detailed AWS & Snowflake setup guide
-└── README.md
-```
-
 ## Setup
 
 For detailed step-by-step setup instructions (AWS S3, IAM, Snowflake storage integration, Snowpipe, S3 event notifications), see [SETUP.md](SETUP.md).
