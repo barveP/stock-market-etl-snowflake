@@ -43,7 +43,7 @@ class StockDataTransformer:
         df = df.merge(company_lookup, on="symbol", how="left")
 
         df["price_id"] = range(1, len(df) + 1)
-        df["date"] = pd.to_datetime(df["date"])
+        df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
         df["loaded_at"] = datetime.utcnow().isoformat()
 
         df["open"] = df["open"].round(4)

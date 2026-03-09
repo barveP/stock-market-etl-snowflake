@@ -1,51 +1,144 @@
 # Stock Market ETL Pipeline
 
-ETL pipeline for S&P 500 stock data using Apache Airflow, AWS S3, and Snowflake.
+An end-to-end ETL pipeline that extracts daily S&P 500 stock data from Yahoo Finance, transforms it into a star schema, stages it in AWS S3 as Parquet files, and auto-ingests into Snowflake via Snowpipe.
 
 ## Architecture
 
 ```
-Yahoo Finance API -> Airflow DAG -> S3 (Parquet) -> Snowpipe -> Snowflake
+Wikipedia (S&P 500 list)
+        |
+        v
+Yahoo Finance API ──> Airflow DAG ──> S3 (Parquet) ──> Snowpipe ──> Snowflake
+                      [Extract]       [Load]           [Ingest]
+                      [Transform]
 ```
 
-**Pipeline Stages:**
-1. **Extract**: Fetch daily OHLCV data for 500 S&P 500 tickers
-2. **Transform**: Create dimension/fact tables with 12 data quality checks
-3. **Load**: Upload parquet files to S3 staging bucket
-4. **Ingest**: Auto-ingest into Snowflake via Snowpipe (5-10s latency)
+### Pipeline Stages
+
+| Stage | Task | Description |
+|-------|------|-------------|
+| Extract | `extract` | Scrapes S&P 500 tickers from Wikipedia, fetches OHLCV data from Yahoo Finance |
+| Transform | `transform` | Builds dim/fact tables, runs 12 data quality validations |
+| Load | `load_s3` | Converts DataFrames to Parquet, uploads to S3 staging |
+| Ingest | `notify_snowpipe` | Triggers Snowpipe refresh for auto-ingestion into Snowflake |
+
+## Results
+
+### Airflow DAG
+The pipeline runs as a 4-task DAG scheduled at 6 PM on weekdays.
+
+![Airflow DAG Pipeline](results/airflow-dag-pipeline.png)
+
+### S3 Staging Bucket
+Parquet files are partitioned by table and date in the S3 staging area.
+
+![S3 Staging Bucket](results/s3-staging-bucket.png)
+
+### Snowflake Tables
+Data lands in Snowflake's star schema tables within seconds via Snowpipe.
+
+![Snowflake Fact Table](results/snowflake-fact-table.png)
 
 ## Data Model
 
-- `dim_sector`: Sector reference data
-- `dim_company`: Company master data with sector FK
-- `fact_daily_prices`: Daily OHLCV price records
-
-## Setup
-
-### 1. Environment Variables
-
-```bash
-cp .env.example .env
-# Edit .env with your credentials
 ```
-
-### 2. Snowflake Setup
-
-```sql
--- Run in Snowflake
-source sql/snowflake_setup.sql
-source sql/snowpipe_setup.sql
+dim_sector (sector_id, sector, created_at)
+    |
+    v
+dim_company (company_id, symbol, company_name, sector_id, ...)
+    |
+    v
+fact_daily_prices (price_id, company_id, date, open, high, low, close, volume, ...)
 ```
-
-### 3. Run with Docker
-
-```bash
-cd docker
-docker-compose up -d
-```
-
-Access Airflow UI at `http://localhost:8080` (admin/admin)
 
 ## Tech Stack
 
-Python, Apache Airflow, AWS S3, Snowflake, Snowpipe, Docker, yfinance
+- **Orchestration**: Apache Airflow 2.7
+- **Data Source**: Yahoo Finance (via yfinance), Wikipedia
+- **Storage**: AWS S3 (Parquet with Snappy compression)
+- **Data Warehouse**: Snowflake (with Snowpipe auto-ingestion)
+- **Containerization**: Docker & Docker Compose
+- **Language**: Python 3.10
+
+## Project Structure
+
+```
+stock-market-etl-snowflake/
+├── config/
+│   └── config.py              # AWS, Snowflake, ETL configuration
+├── dags/
+│   └── stock_etl_dag.py       # Airflow DAG definition
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── sql/
+│   ├── snowflake_setup.sql    # Database, tables, stage DDL
+│   └── snowpipe_setup.sql     # Snowpipe definitions
+├── src/
+│   ├── ingestion/
+│   │   ├── sp500_tickers.py   # S&P 500 ticker scraper
+│   │   └── yahoo_finance.py   # Yahoo Finance price extractor
+│   ├── transformation/
+│   │   ├── transformers.py    # Dim/fact table builder
+│   │   └── validators.py      # 12 data quality checks
+│   └── loading/
+│       ├── s3_loader.py       # S3 Parquet uploader
+│       └── snowflake_loader.py # Snowpipe trigger
+├── results/                   # Pipeline result screenshots
+├── .env.example               # Environment variable template
+├── requirements.txt
+├── SETUP.md                   # Detailed AWS & Snowflake setup guide
+└── README.md
+```
+
+## Setup
+
+For detailed step-by-step setup instructions (AWS S3, IAM, Snowflake storage integration, Snowpipe, S3 event notifications), see [SETUP.md](SETUP.md).
+
+### Quick Start
+
+1. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   # Fill in your AWS and Snowflake credentials
+   ```
+
+2. **Run Snowflake DDL scripts**
+   ```sql
+   -- Execute in Snowflake worksheet
+   -- 1. Create database, tables, and stage
+   -- Run contents of sql/snowflake_setup.sql
+
+   -- 2. Create Snowpipes
+   -- Run contents of sql/snowpipe_setup.sql
+   ```
+
+3. **Start the pipeline**
+   ```bash
+   cd docker
+   docker-compose up -d
+   ```
+
+4. **Access Airflow UI** at `http://localhost:8080`
+   - Username: `admin`
+   - Password: `admin`
+   - Enable the `stock_market_etl` DAG and trigger a manual run
+
+## Data Quality Validations
+
+The pipeline runs 12 automated checks on every batch:
+
+| # | Check | Description |
+|---|-------|-------------|
+| 1 | not_empty | Dataset is non-empty |
+| 2 | no_null_symbols | No null stock symbols |
+| 3 | no_null_dates | No null dates |
+| 4 | positive_prices | OHLC prices > 0 |
+| 5 | positive_volume | Volume >= 0 |
+| 6 | ohlc_relationship | High >= Low, High >= Open/Close |
+| 7 | date_format | Valid date format |
+| 8 | no_duplicates | No symbol-date duplicates |
+| 9 | symbol_format | Valid ticker format (A-Z, 0-9, -, .) |
+| 10 | price_precision | Max 6 decimal places |
+| 11 | reasonable_prices | Between $0.01 and $100,000 |
+| 12 | volume_range | Volume <= 1 trillion |

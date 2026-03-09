@@ -4,24 +4,14 @@ x-airflow-common: &airflow-common
   build:
     context: ..
     dockerfile: docker/Dockerfile
+  env_file:
+    - ../.env
   environment:
     - AIRFLOW__CORE__EXECUTOR=LocalExecutor
     - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
     - AIRFLOW__CORE__FERNET_KEY=${FERNET_KEY:-}
     - AIRFLOW__CORE__LOAD_EXAMPLES=False
     - AIRFLOW__WEBSERVER__SECRET_KEY=${WEBSERVER_SECRET_KEY:-secret}
-    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-    - AWS_REGION=${AWS_REGION}
-    - S3_BUCKET=${S3_BUCKET}
-    - S3_STAGING_PREFIX=${S3_STAGING_PREFIX}
-    - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
-    - SNOWFLAKE_USER=${SNOWFLAKE_USER}
-    - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
-    - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
-    - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
-    - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
-    - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
   volumes:
     - ../dags:/opt/airflow/dags
     - ../src:/opt/airflow/src

@@ -69,5 +69,6 @@ class YahooFinanceExtractor:
 
     def extract_for_date_range(self, tickers: List[str], days_back: int = 1) -> List[Dict]:
         end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+        # Look back extra days to account for weekends/holidays
+        start_date = (datetime.now() - timedelta(days=max(days_back, 5))).strftime("%Y-%m-%d")
         return self.extract_daily_prices(tickers, start_date, end_date)

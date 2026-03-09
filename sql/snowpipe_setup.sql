@@ -13,8 +13,7 @@ FROM (
         $1:created_at::TIMESTAMP_NTZ
     FROM @stock_etl_stage/dim_sector/
 )
-FILE_FORMAT = parquet_format
-MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+FILE_FORMAT = (TYPE = 'PARQUET', COMPRESSION = 'SNAPPY');
 
 -- Snowpipe for dim_company
 CREATE OR REPLACE PIPE dim_company_pipe
@@ -35,8 +34,7 @@ FROM (
         $1:updated_at::TIMESTAMP_NTZ
     FROM @stock_etl_stage/dim_company/
 )
-FILE_FORMAT = parquet_format
-MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+FILE_FORMAT = (TYPE = 'PARQUET', COMPRESSION = 'SNAPPY');
 
 -- Snowpipe for fact_daily_prices
 CREATE OR REPLACE PIPE fact_daily_prices_pipe
@@ -57,8 +55,7 @@ FROM (
         $1:loaded_at::TIMESTAMP_NTZ
     FROM @stock_etl_stage/fact_daily_prices/
 )
-FILE_FORMAT = parquet_format
-MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+FILE_FORMAT = (TYPE = 'PARQUET', COMPRESSION = 'SNAPPY');
 
 -- Get notification channel ARN for S3 event setup
 SHOW PIPES;

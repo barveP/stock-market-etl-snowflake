@@ -38,18 +38,7 @@ CREATE OR REPLACE TABLE fact_daily_prices (
     loaded_at TIMESTAMP_NTZ
 );
 
--- Indexes
-CREATE OR REPLACE INDEX idx_prices_date ON fact_daily_prices(date);
-CREATE OR REPLACE INDEX idx_prices_company ON fact_daily_prices(company_id);
-CREATE OR REPLACE INDEX idx_company_symbol ON dim_company(symbol);
-
--- File Format for Parquet
-CREATE OR REPLACE FILE FORMAT parquet_format
-    TYPE = 'PARQUET'
-    COMPRESSION = 'SNAPPY';
-
--- External Stage for S3
 CREATE OR REPLACE STAGE stock_etl_stage
+    STORAGE_INTEGRATION = s3_stock_etl_integration
     URL = 's3://stock-market-etl-bucket/staging/'
-    CREDENTIALS = (AWS_KEY_ID = '' AWS_SECRET_KEY = '')
-    FILE_FORMAT = parquet_format;
+    FILE_FORMAT = (TYPE = 'PARQUET', COMPRESSION = 'SNAPPY');
